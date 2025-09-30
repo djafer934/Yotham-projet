@@ -1,642 +1,1239 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>DAB Simple avec dépôt + Assistant IA</title>
-<style>
-  body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
-  .container { max-width: 400px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);}
-  h1, h2 { text-align: center; color: #2563eb; }
-  .screen { display: none; }
-  .screen.active { display: block; }
-  .form-group { margin-bottom: 15px; }
-  label { display: block; margin-bottom: 5px; font-weight: bold; }
-  input[type=text], input[type=password], input[type=number] { width: 100%; padding: 10px; font-size: 16px; border: 2px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-  input:focus { border-color: #2563eb; outline: none; }
-  button { width: 100%; padding: 12px; font-size: 16px; background: #2563eb; color: white; border: none; border-radius: 5px; cursor: pointer; margin: 5px 0; }
-  button.secondary { background: #6b7280; }
-  button:hover { background: #1d4ed8; }
-  button.secondary:hover { background: #4b5563; }
-  .balance { background: #2563eb; color: white; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }
-  .error { background: #fee; color: #c00; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #c00; display: none; }
-  .error.show { display: block; }
-  .success { background: #efe; color: #060; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #060; display: none; }
-  .success.show { display: block; }
-  .menu-item { background: #f8f9fa; border: 2px solid #ddd; margin: 10px 0; text-align: left; display: flex; align-items: center; padding: 15px; cursor: pointer; }
-  .menu-item:hover { border-color: #2563eb; }
-  .menu-icon { margin-right: 15px; font-size: 1.2em; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DAB - Distributeur Automatique de Billets</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Reset et variables CSS */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-  /* Assistant UI */
-  .assistant-toggle { position: fixed; right: 20px; bottom: 20px; z-index: 1000; }
-  .assistant-button { background: linear-gradient(135deg,#2563eb,#7c3aed); border:none; color:white; padding:12px 16px; border-radius:50px; cursor:pointer; box-shadow:0 4px 12px rgba(50,50,93,0.2); }
-  .assistant-screen { position: fixed; right: 20px; bottom: 80px; width: 320px; max-height: 70vh; background: white; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); overflow: hidden; display:none; z-index:1000; }
-  .assistant-header { background:#2563eb; color:white; padding:12px; display:flex; justify-content:space-between; align-items:center; }
-  .assistant-messages { padding:12px; max-height: 50vh; overflow-y:auto; background:#f7f9fc; }
-  .assistant-input { display:flex; gap:8px; padding:12px; border-top:1px solid #eee; }
-  .assistant-input input { flex:1; padding:10px; border:1px solid #ddd; border-radius:6px; }
-  .assistant-bubble { margin:8px 0; padding:10px 12px; border-radius:12px; max-width:80%; }
-  .assistant-bubble.user { background:#2563eb; color:white; margin-left:auto; }
-  .assistant-bubble.bot { background:#fff; border:1px solid #e6eefc; }
-  .assistant-hint { font-size:12px; color:#666; text-align:center; padding:8px; }
-</style>
+        :root {
+            --primary-color: #2563eb;
+            --primary-hover: #1d4ed8;
+            --secondary-color: #64748b;
+            --success-color: #059669;
+            --error-color: #dc2626;
+            --warning-color: #d97706;
+            --background: #f8fafc;
+            --surface: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            --border-radius: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Mode sombre */
+        [data-theme="dark"] {
+            --background: #0f172a;
+            --surface: #1e293b;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --border-color: #334155;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Styles de base */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background: var(--background);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: var(--transition);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header */
+        .header {
+            background: var(--surface);
+            box-shadow: var(--shadow);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 2px solid var(--border-color);
+            border-radius: 50px;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .theme-toggle:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* Main content */
+        .main {
+            min-height: calc(100vh - 120px);
+            display: flex;
+            align-items: center;
+            padding: 2rem 0;
+        }
+
+        /* Sections/Écrans */
+        .screen {
+            display: none;
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 2.5rem;
+            box-shadow: var(--shadow-lg);
+            transition: var(--transition);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .screen-title {
+            text-align: center;
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 2rem;
+            color: var(--text-primary);
+        }
+
+        /* Formulaires */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            background: var(--surface);
+            color: var(--text-primary);
+            transition: var(--transition);
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input.error {
+            border-color: var(--error-color);
+        }
+
+        /* Boutons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: var(--transition);
+            min-width: 120px;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #475569;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover:not(:disabled) {
+            background: #047857;
+        }
+
+        .btn-danger {
+            background: var(--error-color);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: #b91c1c;
+        }
+
+        .btn-large {
+            width: 100%;
+            padding: 1.25rem 2rem;
+            font-size: 1.1rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Menu d'options */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+            background: var(--surface);
+            border: 2px solid var(--border-color);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            color: var(--text-primary);
+        }
+
+        .menu-item:hover {
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .menu-icon {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+            width: 2rem;
+            text-align: center;
+        }
+
+        .menu-text {
+            font-weight: 500;
+        }
+
+        /* Montants de retrait */
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .amount-btn {
+            padding: 1.5rem;
+            border: 2px solid var(--border-color);
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: var(--transition);
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .amount-btn:hover,
+        .amount-btn.selected {
+            border-color: var(--primary-color);
+            background: rgba(37, 99, 235, 0.1);
+        }
+
+        /* Affichage du solde */
+        .balance-display {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .balance-label {
+            font-size: 1rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+
+        .balance-amount {
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        /* Messages et alertes */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .alert-error {
+            background: rgba(220, 38, 38, 0.1);
+            color: var(--error-color);
+            border: 1px solid rgba(220, 38, 38, 0.2);
+        }
+
+        .alert-success {
+            background: rgba(5, 150, 105, 0.1);
+            color: var(--success-color);
+            border: 1px solid rgba(5, 150, 105, 0.2);
+        }
+
+        .alert-warning {
+            background: rgba(217, 119, 6, 0.1);
+            color: var(--warning-color);
+            border: 1px solid rgba(217, 119, 6, 0.2);
+        }
+
+        /* Actions */
+        .actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--surface);
+            color: var(--text-primary);
+            padding: 1rem 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow-lg);
+            transform: translateX(400px);
+            transition: var(--transition);
+            z-index: 1000;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left-color: var(--success-color);
+        }
+
+        .toast.error {
+            border-left-color: var(--error-color);
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--surface);
+            border-radius: var(--border-radius);
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .modal-body {
+            margin-bottom: 2rem;
+            color: var(--text-secondary);
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+        }
+
+        /* Loading spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            border: 3px solid rgba(37, 99, 235, 0.1);
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--surface);
+            border-top: 1px solid var(--border-color);
+            padding: 1.5rem 0;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 15px;
+            }
+
+            .screen {
+                padding: 2rem 1.5rem;
+            }
+
+            .amount-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+            }
+
+            .toast {
+                right: 15px;
+                left: 15px;
+                transform: translateY(-100px);
+            }
+
+            .toast.show {
+                transform: translateY(0);
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🏧 La banque du peuple</h1>
-
-    <!-- ÉCRAN 1 : Authentification -->
-    <div id="loginScreen" class="screen active">
-      <h2>Authentification</h2>
-      <div class="form-group">
-        <label for="cardNumber">Numéro de carte (16 chiffres):</label>
-        <input type="text" id="cardNumber" maxlength="16" placeholder="1234567890123456" />
-      </div>
-      <div class="form-group">
-        <label for="pin">Code PIN (4 chiffres):</label>
-        <input type="password" id="pin" maxlength="4" placeholder="1234" />
-      </div>
-      <div id="loginError" class="error"></div>
-      <button onclick="login()">Se connecter</button>
-      <button class="secondary" onclick="showOperatorLogin()" style="margin-top: 10px; font-size: 12px;">🔧 Mode Opérateur</button>
-    </div>
-
-    <!-- ÉCRAN 2 : Menu principal -->
-    <div id="menuScreen" class="screen">
-      <h2>Bonjour <span id="userName">Client</span> !</h2>
-      <button class="menu-item" onclick="showBalance()"><span class="menu-icon">👁️</span>Voir mon solde</button>
-      <button class="menu-item" onclick="showWithdraw()"><span class="menu-icon">💰</span>Retirer de l'argent</button>
-      <button class="menu-item" onclick="showDeposit()"><span class="menu-icon">➕</span>Déposer de l'argent</button>
-      <button class="menu-item" onclick="showHistory()"><span class="menu-icon">📋</span>Historique des opérations</button>
-      <button class="menu-item" onclick="openAssistant()"><span class="menu-icon">🤖</span>Assistant IA</button>
-      <button class="secondary" onclick="logout()">Déconnexion</button>
-    </div>
-
-    <!-- ÉCRAN 3 : Affichage du solde -->
-    <div id="balanceScreen" class="screen">
-      <h2>Votre solde</h2>
-      <div class="balance"><h2 id="balanceAmount">0 €</h2><p>Solde disponible</p></div>
-      <button class="secondary" onclick="backToMenu()">Retour au menu</button>
-    </div>
-
-    <!-- ÉCRAN 4 : Retrait -->
-    <div id="withdrawScreen" class="screen">
-      <h2>Retirer de l'argent</h2>
-      <div class="form-group">
-        <label for="withdrawAmount">Montant à retirer :</label>
-        <input type="number" id="withdrawAmount" min="10" max="500" step="10" placeholder="Ex : 50" />
-      </div>
-      <div id="withdrawError" class="error"></div>
-      <div id="withdrawSuccess" class="success"></div>
-      <button onclick="withdraw()">Retirer</button>
-      <button class="secondary" onclick="backToMenu()">Retour au menu</button>
-    </div>
-
-    <!-- ÉCRAN 5 : Dépôt -->
-    <div id="depositScreen" class="screen">
-      <h2>Déposer de l'argent</h2>
-      <div class="form-group">
-        <label for="depositAmount">Montant à déposer :</label>
-        <input type="number" id="depositAmount" min="10" step="10" placeholder="Ex : 100" />
-      </div>
-      <div id="depositError" class="error"></div>
-      <div id="depositSuccess" class="success"></div>
-      <button onclick="deposit()">Déposer</button>
-      <button class="secondary" onclick="backToMenu()">Retour au menu</button>
-    </div>
-
-    <!-- ÉCRAN 6 : Historique des opérations -->
-    <div id="historyScreen" class="screen">
-      <h2>📋 Historique des opérations</h2>
-      <div id="historyList" style="max-height:400px; overflow-y:auto;"></div>
-      <button class="secondary" onclick="backToMenu()">Retour au menu</button>
-    </div>
-
-    <!-- ÉCRAN 7 : Connexion Opérateur -->
-    <div id="operatorLoginScreen" class="screen">
-      <h2>🔧 Connexion Opérateur</h2>
-      <div class="form-group">
-        <label for="operatorCode">Code Opérateur :</label>
-        <input type="password" id="operatorCode" maxlength="6" placeholder="123456" />
-      </div>
-      <div id="operatorLoginError" class="error"></div>
-      <button onclick="operatorLogin()">Se connecter</button>
-      <button class="secondary" onclick="showScreen('loginScreen')">⬅ Retour</button>
-    </div>
-
-    <!-- ÉCRAN 8 : Menu Opérateur -->
-    <div id="operatorMenuScreen" class="screen">
-      <h2>🔧 Menu Opérateur</h2>
-      <p>Bonjour <span id="operatorName">Opérateur</span></p>
-      <button class="menu-item" onclick="showBlockedCards()"><span class="menu-icon">🔒</span>Cartes avalées</button>
-      <button class="menu-item" onclick="showCollectDeposits()"><span class="menu-icon">💰</span>Collecter dépôts</button>
-      <button class="menu-item" onclick="showRefillATM()"><span class="menu-icon">🏧</span>Recharger DAB</button>
-      <button class="menu-item" onclick="showStatistics()"><span class="menu-icon">📊</span>Statistiques</button>
-      <button class="secondary" onclick="operatorLogout()">🚪 Déconnexion</button>
-    </div>
-
-    <!-- ÉCRAN 9 : Cartes avalées -->
-    <div id="blockedCardsScreen" class="screen">
-      <h2>🔒 Cartes avalées</h2>
-      <div id="blockedCardsList"></div>
-      <button onclick="releaseAllCards()">🔓 Libérer toutes les cartes</button>
-      <button class="secondary" onclick="showScreen('operatorMenuScreen')">⬅ Retour</button>
-    </div>
-
-    <!-- ÉCRAN 10 : Collecter dépôts -->
-    <div id="collectScreen" class="screen">
-      <h2>💰 Collecter dépôts</h2>
-      <div class="balance">
-        <h3>Total des dépôts : <span id="totalDeposits">0 €</span></h3>
-        <p>Argent à collecter dans la machine</p>
-      </div>
-      <button onclick="collectDeposits()">✅ Marquer comme collecté</button>
-      <button class="secondary" onclick="showScreen('operatorMenuScreen')">⬅ Retour</button>
-    </div>
-
-    <!-- ÉCRAN 11 : Recharger DAB -->
-    <div id="refillScreen" class="screen">
-      <h2>🏧 Recharger DAB</h2>
-      <div class="form-group">
-        <label for="refillAmount">Montant à ajouter (en €) :</label>
-        <input type="number" id="refillAmount" placeholder="Ex: 5000" step="100">
-      </div>
-      <button onclick="refillATM()">💰 Recharger</button>
-      <button class="secondary" onclick="showScreen('operatorMenuScreen')">⬅ Retour</button>
-      <p id="refillMessage" class="success"></p>
-    </div>
-
-  </div>
-
-  <!-- Assistant IA (flottant) -->
-  <div class="assistant-toggle">
-    <button class="assistant-button" onclick="toggleAssistant()">🤖 IA</button>
-  </div>
-
-  <div id="assistantScreen" class="assistant-screen">
-    <div class="assistant-header">
-      <div>Assistant IA</div>
-      <div style="font-size:12px; opacity:0.9;">Répond aux besoins basiques</div>
-    </div>
-    <div id="assistantMessages" class="assistant-messages"></div>
-    <div class="assistant-hint">Exemples : "Quel est mon solde ?", "Retirer 50€", "Montre mes 3 dernières opérations"</div>
-    <div class="assistant-input">
-      <input id="assistantInput" placeholder="Écris ta demande... (ex: solde, retirer 50)" onkeydown="if(event.key===\'Enter\') sendAssistantMessage()" />
-      <button onclick="sendAssistantMessage()">Envoyer</button>
-    </div>
-  </div>
-
-<script>
-  // === Données utilisateurs simulées ===
-  const validCards = {
-    '1234567890123456': { pin: '6453', name: 'M. Dupont', balance: 2500, type: 'Banque' },
-    '9876543210987654': { pin: '5628', name: 'Mme Martin', balance: 1750, type: 'Visa' }
-  };
-  
-  // Suivi des tentatives et cartes bloquées
-  let loginAttempts = {};
-  let blockedCards = {};
-  
-  // Variables d'état
-  let currentUser = null;
-  let operationHistory = [];
-  let currentOperator = null;
-  const operatorCode = '539757';
-  
-  // Variables pour les statistiques opérateur
-  let totalDepositsToday = 0;
-  let dailyTransactions = 0;
-
-  // === Navigation entre écrans ===
-  function showScreen(id) {
-    document.querySelectorAll('.screen').forEach(screen => screen.classList.remove('active'));
-    document.getElementById(id).classList.add('active');
-    hideMessages();
-  }
-
-  function hideMessages() {
-    document.querySelectorAll('.error, .success').forEach(el => {
-      el.classList.remove('show');
-      el.textContent = '';
-    });
-  }
-
-  // === Fonction pour enregistrer une opération dans l'historique ===
-  function addToHistory(type, amount) {
-    const now = new Date();
-    const operation = {
-      type: type,
-      amount: amount,
-      date: now.toLocaleDateString('fr-FR'),
-      time: now.toLocaleTimeString('fr-FR', {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit'
-      })
-    };
-    operationHistory.unshift(operation);
-  }
-
-  // === Afficher l'écran historique ===
-  function showHistory() {
-    const historyList = document.getElementById('historyList');
-    
-    if (operationHistory.length === 0) {
-      historyList.innerHTML = '<p style="text-align:center; color:#999;">Aucune opération effectuée</p>';
-    } else {
-      let html = '<ul style="list-style:none; padding:0;">';
-      
-      operationHistory.forEach(op => {
-        let icon = '';
-        let color = '';
-        if (op.type === 'Dépôt') {
-          icon = '➕';
-          color = '#060';
-        } else if (op.type === 'Retrait') {
-          icon = '💰';
-          color = '#c00';
-        } else {
-          icon = '👁️';
-          color = '#666';
-        }
-        
-        html += `
-          <li style="background:#f8f9fa; padding:15px; margin:10px 0; border-left:4px solid ${color}; border-radius:5px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <div>
-                <strong style="color:${color};">${icon} ${op.type}</strong>
-                <br>
-                <small style="color:#666;">${op.date} à ${op.time}</small>
-              </div>
-              <div style="font-size:1.2em; font-weight:bold; color:${color};">
-                ${op.amount > 0 ? op.amount + ' €' : '—'}
-              </div>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-university"></i>
+                    <span>MonDAB</span>
+                </div>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-moon" id="themeIcon"></i>
+                </button>
             </div>
-          </li>
-        `;
-      });
-      
-      html += '</ul>';
-      historyList.innerHTML = html;
-    }
-    
-    showScreen('historyScreen');
-  }
+        </div>
+    </header>
 
-  // === Authentification ===
-  function login() {
-    const cardNumber = document.getElementById('cardNumber').value.trim();
-    const pin = document.getElementById('pin').value.trim();
+    <!-- Contenu principal -->
+    <main class="main">
+        <div class="container">
+            
+            <!-- Écran de connexion -->
+            <section id="loginScreen" class="screen active">
+                <h2 class="screen-title">
+                    <i class="fas fa-lock"></i>
+                    Authentification
+                </h2>
+                
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label class="form-label" for="cardNumber">Numéro de carte</label>
+                        <input type="text" id="cardNumber" class="form-input" placeholder="1234 5678 9012 3456" maxlength="19">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="pin">Code PIN</label>
+                        <input type="password" id="pin" class="form-input" placeholder="****" maxlength="4">
+                    </div>
+                    
+                    <div id="loginError" class="alert alert-error" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span id="loginErrorMsg"></span>
+                    </div>
+                    
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary btn-large">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Se connecter
+                        </button>
+                    </div>
+                </form>
+            </section>
 
-    if (blockedCards[cardNumber]) {
-      showError('loginError', 'Carte avalée. Contactez le service de maintenance.');
-      return;
-    }
+            <!-- Menu principal -->
+            <section id="mainMenuScreen" class="screen">
+                <h2 class="screen-title">
+                    Bonjour, <span id="userName">Client</span>
+                </h2>
+                
+                <div class="menu-grid">
+                    <button class="menu-item" onclick="showScreen('balanceScreen')">
+                        <i class="menu-icon fas fa-eye"></i>
+                        <span class="menu-text">Consulter le solde</span>
+                    </button>
+                    
+                    <button class="menu-item" onclick="showScreen('withdrawScreen')">
+                        <i class="menu-icon fas fa-money-bill-wave"></i>
+                        <span class="menu-text">Retirer de l'argent</span>
+                    </button>
+                    
+                    <button class="menu-item" onclick="showScreen('depositScreen')">
+                        <i class="menu-icon fas fa-plus-circle"></i>
+                        <span class="menu-text">Déposer de l'argent</span>
+                    </button>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="logout()">
+                        <i class="fas fa-sign-out-alt"></i>
+                        Déconnexion
+                    </button>
+                </div>
+            </section>
 
-    if (validCards[cardNumber] && validCards[cardNumber].pin === pin) {
-      loginAttempts[cardNumber] = 0;
-      currentUser = validCards[cardNumber];
-      document.getElementById('userName').textContent = currentUser.name;
-      updateBalanceDisplay();
-      showScreen('menuScreen');
-    } else {
-      loginAttempts[cardNumber] = (loginAttempts[cardNumber] || 0) + 1;
-      if (loginAttempts[cardNumber] >= 3) {
-        blockedCards[cardNumber] = true;
-        showError('loginError', 'Carte avalée après 3 tentatives. Contactez le service de maintenance.');
-      } else {
-        showError('loginError', `Numéro de carte ou PIN incorrect (${loginAttempts[cardNumber]} / 3)`);
-      }
-    }
-  }
+            <!-- Consultation du solde -->
+            <section id="balanceScreen" class="screen">
+                <h2 class="screen-title">Votre solde</h2>
+                
+                <div class="balance-display">
+                    <div class="balance-label">Solde actuel</div>
+                    <div class="balance-amount" id="balanceAmount">2 500,00 €</div>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="showScreen('mainMenuScreen')">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </button>
+                </div>
+            </section>
 
-  // === Mise à jour du solde affiché ===
-  function updateBalanceDisplay() {
-    document.getElementById('balanceAmount').textContent = (currentUser ? currentUser.balance : 0) + ' €';
-  }
+            <!-- Retrait d'argent -->
+            <section id="withdrawScreen" class="screen">
+                <h2 class="screen-title">Retirer de l'argent</h2>
+                
+                <div class="amount-grid">
+                    <button class="amount-btn" onclick="selectAmount(20)">20 €</button>
+                    <button class="amount-btn" onclick="selectAmount(50)">50 €</button>
+                    <button class="amount-btn" onclick="selectAmount(100)">100 €</button>
+                    <button class="amount-btn" onclick="selectAmount(200)">200 €</button>
+                    <button class="amount-btn" onclick="selectAmount(300)">300 €</button>
+                    <button class="amount-btn" onclick="selectAmount(500)">500 €</button>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="customAmount">Ou saisissez un montant</label>
+                    <input type="number" id="customAmount" class="form-input" placeholder="Montant en euros" min="10" max="1000" step="10">
+                </div>
+                
+                <div id="withdrawError" class="alert alert-error" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="withdrawErrorMsg"></span>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="showScreen('mainMenuScreen')">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </button>
+                    <button class="btn btn-primary" onclick="confirmWithdraw()">
+                        <i class="fas fa-check"></i>
+                        Retirer
+                    </button>
+                </div>
+            </section>
 
-  // === Fonction de déconnexion ===
-  function logout() {
-    operationHistory = [];
-    currentUser = null;
-    document.getElementById('cardNumber').value = '';
-    document.getElementById('pin').value = '';
-    document.getElementById('withdrawAmount').value = '';
-    document.getElementById('depositAmount').value = '';
-    showScreen('loginScreen');
-  }
+            <!-- Dépôt d'argent -->
+            <section id="depositScreen" class="screen">
+                <h2 class="screen-title">Déposer de l'argent</h2>
+                
+                <div class="form-group">
+                    <label class="form-label">Type de dépôt</label>
+                    <div class="menu-grid">
+                        <button class="menu-item" onclick="selectDepositType('cash')" id="cashOption">
+                            <i class="menu-icon fas fa-money-bill"></i>
+                            <span class="menu-text">Espèces</span>
+                        </button>
+                        <button class="menu-item" onclick="selectDepositType('check')" id="checkOption">
+                            <i class="menu-icon fas fa-file-invoice"></i>
+                            <span class="menu-text">Chèque</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label" for="depositAmount">Montant</label>
+                    <input type="number" id="depositAmount" class="form-input" placeholder="Montant en euros" min="1" step="0.01">
+                </div>
+                
+                <div id="depositError" class="alert alert-error" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="depositErrorMsg"></span>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-secondary" onclick="showScreen('mainMenuScreen')">
+                        <i class="fas fa-arrow-left"></i>
+                        Retour
+                    </button>
+                    <button class="btn btn-success" onclick="confirmDeposit()">
+                        <i class="fas fa-plus"></i>
+                        Déposer
+                    </button>
+                </div>
+            </section>
 
-  // === Afficher écran solde ===
-  function showBalance() {
-    updateBalanceDisplay();
-    addToHistory('Consultation', 0);
-    showScreen('balanceScreen');
-  }
+            <!-- Écran carte avalée -->
+            <section id="cardSwallowedScreen" class="screen">
+                <h2 class="screen-title">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--error-color);"></i>
+                    Carte retenue
+                </h2>
+                
+                <div class="alert alert-warning">
+                    <i class="fas fa-info-circle"></i>
+                    Votre carte bancaire a été retenue par le distributeur pour des raisons de sécurité.
+                </div>
+                
+                <div style="text-align: center; margin: 2rem 0;">
+                    <p style="margin-bottom: 1rem;">
+                        Veuillez contacter votre banque ou un opérateur de maintenance.
+                    </p>
+                    <p style="font-weight: 500;">
+                        Référence incident : <span style="color: var(--primary-color);">DAB-2024-001</span>
+                    </p>
+                </div>
+                
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="contactOperator()">
+                        <i class="fas fa-phone"></i>
+                        Contacter un opérateur
+                    </button>
+                    <button class="btn btn-secondary" onclick="showScreen('loginScreen')">
+                        <i class="fas fa-home"></i>
+                        Retour à l'accueil
+                    </button>
+                </div>
+            </section>
 
-  // === Afficher écran retrait ===
-  function showWithdraw() {
-    document.getElementById('withdrawAmount').value = '';
-    hideMessages();
-    showScreen('withdrawScreen');
-  }
+        </div>
+    </main>
 
-  // === Afficher écran dépôt ===
-  function showDeposit() {
-    document.getElementById('depositAmount').value = '';
-    hideMessages();
-    showScreen('depositScreen');
-  }
+    <!-- Modal de confirmation -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3 class="modal-title" id="confirmTitle">Confirmer l'opération</h3>
+            <div class="modal-body" id="confirmMessage">
+                Êtes-vous sûr de vouloir effectuer cette opération ?
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeModal()">Annuler</button>
+                <button class="btn btn-primary" id="confirmBtn" onclick="executeOperation()">Confirmer</button>
+            </div>
+        </div>
+    </div>
 
-  // === Retour au menu ===
-  function backToMenu() {
-    hideMessages();
-    showScreen('menuScreen');
-  }
+    <!-- Loading -->
+    <div id="loading" class="loading">
+        <div class="spinner"></div>
+        <p>Traitement en cours...</p>
+    </div>
 
-  // === Retrait d'argent ===
-  function withdraw() {
-    hideMessages();
-    const amount = parseInt(document.getElementById('withdrawAmount').value, 10);
-    if (!currentUser) { showError('withdrawError', 'Vous devez être connecté pour retirer.'); return; }
-    if (!amount || amount <= 0) {
-      showError('withdrawError', 'Veuillez saisir un montant valide');
-      return;
-    }
-    if (amount < 10) {
-      showError('withdrawError', 'Montant minimum : 10€');
-      return;
-    }
-    if (amount > 500) {
-      showError('withdrawError', 'Montant maximum : 500€');
-      return;
-    }
-    if (amount % 10 !== 0) {
-      showError('withdrawError', 'Le montant doit être un multiple de 10€');
-      return;
-    }
-    if (amount > currentUser.balance) {
-      showError('withdrawError', 'Solde insuffisant');
-      return;
-    }
+    <!-- Toast notification -->
+    <div id="toast" class="toast">
+        <span id="toastMessage"></span>
+    </div>
 
-    currentUser.balance -= amount;
-    addToHistory('Retrait', amount);
-    dailyTransactions += 1;
-    updateBalanceDisplay();
-    showSuccess('withdrawSuccess', `Retrait de ${amount}€ effectué avec succès`);
-    document.getElementById('withdrawAmount').value = '';
-  }
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 MonDAB - Service sécurisé | Support : 0800 123 456</p>
+        </div>
+    </footer>
 
-  // === Dépôt d'argent ===
-  function deposit() {
-    hideMessages();
-    const amount = parseInt(document.getElementById('depositAmount').value, 10);
-    if (!currentUser) { showError('depositError', 'Vous devez être connecté pour déposer.'); return; }
-    if (!amount || amount <= 0) {
-      showError('depositError', 'Veuillez saisir un montant valide');
-      return;
-    }
-    if (amount < 10) {
-      showError('depositError', 'Montant minimum : 10€');
-      return;
-    }
-    if (amount % 10 !== 0) {
-      showError('depositError', 'Le montant doit être un multiple de 10€');
-      return;
-    }
+    <script>
+        // Variables globales
+        let currentUser = null;
+        let currentBalance = 2500.00;
+        let selectedAmount = null;
+        let selectedDepositType = null;
+        let pendingOperation = null;
 
-    currentUser.balance += amount;
-    addToHistory('Dépôt', amount);
-    totalDepositsToday += amount;
-    dailyTransactions += 1;
-    updateBalanceDisplay();
-    showSuccess('depositSuccess', `Dépôt de ${amount}€ effectué avec succès`);
-    document.getElementById('depositAmount').value = '';
-  }
+        // Données de démonstration
+        const validCards = {
+            '1234567890123456': { pin: '1234', name: 'M. Dupont', balance: 2500.00 },
+            '9876543210987654': { pin: '5678', name: 'Mme Martin', balance: 1750.50 }
+        };
 
-  // === Affichage des erreurs et succès ===
-  function showError(id, message) {
-    const el = document.getElementById(id);
-    el.textContent = message;
-    el.classList.add('show');
-  }
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
 
-  function showSuccess(id, message) {
-    const el = document.getElementById(id);
-    el.textContent = message;
-    el.classList.add('show');
-  }
+        function initializeApp() {
+            // Gestion du thème
+            const themeToggle = document.getElementById('themeToggle');
+            const themeIcon = document.getElementById('themeIcon');
+            
+            themeToggle.addEventListener('click', function() {
+                const body = document.body;
+                const isDark = body.getAttribute('data-theme') === 'dark';
+                
+                if (isDark) {
+                    body.removeAttribute('data-theme');
+                    themeIcon.className = 'fas fa-moon';
+                } else {
+                    body.setAttribute('data-theme', 'dark');
+                    themeIcon.className = 'fas fa-sun';
+                }
+            });
 
-  // === Fonctions Opérateur ===
-  function showOperatorLogin() {
-    document.getElementById('operatorCode').value = '';
-    hideMessages();
-    showScreen('operatorLoginScreen');
-  }
+            // Formatage automatique du numéro de carte
+            const cardNumberInput = document.getElementById('cardNumber');
+            cardNumberInput.addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                value = value.replace(/(.{4})/g, '$1 ').trim();
+                e.target.value = value;
+            });
 
-  function operatorLogin() {
-    const code = document.getElementById('operatorCode').value.trim();
-    
-    if (code === operatorCode) {
-      currentOperator = { name: 'Opérateur', code: code };
-      showScreen('operatorMenuScreen');
-    } else {
-      showError('operatorLoginError', 'Code opérateur incorrect');
-    }
-  }
+            // Validation PIN (chiffres uniquement)
+            const pinInput = document.getElementById('pin');
+            pinInput.addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/\D/g, '');
+            });
 
-  function showBlockedCards() {
-    updateBlockedCardsList();
-    showScreen('blockedCardsScreen');
-  }
+            // Gestion du formulaire de connexion
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', handleLogin);
 
-  function showCollectDeposits() {
-    document.getElementById('totalDeposits').textContent = totalDepositsToday + ' €';
-    showScreen('collectScreen');
-  }
+            // Montant personnalisé pour retrait
+            const customAmountInput = document.getElementById('customAmount');
+            customAmountInput.addEventListener('input', function() {
+                clearSelectedAmount();
+            });
+        }
 
-  function showRefillATM() {
-    document.getElementById('refillAmount').value = '';
-    document.getElementById('refillMessage').textContent = '';
-    showScreen('refillScreen');
-  }
+        // Gestion de l'authentification
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+            const pin = document.getElementById('pin').value;
+            
+            // Validation locale
+            if (!validateCardNumber(cardNumber) || !validatePin(pin)) {
+                return;
+            }
 
-  function showStatistics() {
-    alert('📊 Statistiques DAB :\n' +
-      '- Cartes avalées : ' + Object.keys(blockedCards).length + '\n' +
-      '- Dépôts du jour : ' + totalDepositsToday + '€\n' +
-      '- Transactions : ' + dailyTransactions + '\n' +
-      '- Tentatives de connexion : ' + Object.keys(loginAttempts).length);
-  }
+            showLoading();
 
-  function operatorLogout() {
-    currentOperator = null;
-    showScreen('loginScreen');
-  }
+            // Simulation d'une requête réseau
+            setTimeout(() => {
+                hideLoading();
+                
+                if (validCards[cardNumber] && validCards[cardNumber].pin === pin) {
+                    currentUser = validCards[cardNumber];
+                    currentBalance = currentUser.balance;
+                    updateUserName(currentUser.name);
+                    updateBalance();
+                    showScreen('mainMenuScreen');
+                    showToast('Connexion réussie', 'success');
+                } else {
+                    showLoginError('Numéro de carte ou PIN incorrect');
+                    
+                    // Simulation de carte avalée après 3 tentatives (simplifiée ici)
+                    if (Math.random() < 0.3) {
+                        setTimeout(() => {
+                            showScreen('cardSwallowedScreen');
+                        }, 1000);
+                    }
+                }
+            }, 2000);
+        }
 
-  function updateBlockedCardsList() {
-    const list = document.getElementById('blockedCardsList');
-    const blocked = Object.keys(blockedCards);
-    
-    if (blocked.length === 0) {
-      list.innerHTML = '<p>✅ Aucune carte avalée</p>';
-    } else {
-      list.innerHTML = '<p>⚠️ Cartes avalées :</p><ul>' + 
-        blocked.map(card => '<li>' + card + '</li>').join('') + '</ul>';
-    }
-  }
+        function validateCardNumber(cardNumber) {
+            if (cardNumber.length !== 16 || !/^\d+$/.test(cardNumber)) {
+                showLoginError('Le numéro de carte doit contenir 16 chiffres');
+                return false;
+            }
+            return true;
+        }
 
-  function releaseAllCards() {
-    blockedCards = {};
-    loginAttempts = {};
-    updateBlockedCardsList();
-    alert('✅ Toutes les cartes ont été libérées !');
-  }
+        function validatePin(pin) {
+            if (pin.length !== 4 || !/^\d+$/.test(pin)) {
+                showLoginError('Le PIN doit contenir 4 chiffres');
+                return false;
+            }
+            return true;
+        }
 
-  function collectDeposits() {
-    totalDepositsToday = 0;
-    document.getElementById('totalDeposits').textContent = '0 €';
-    alert('💰 Dépôts collectés avec succès !');
-  }
+        function showLoginError(message) {
+            const errorDiv = document.getElementById('loginError');
+            const errorMsg = document.getElementById('loginErrorMsg');
+            errorMsg.textContent = message;
+            errorDiv.style.display = 'flex';
+        }
 
-  function refillATM() {
-    const amount = parseInt(document.getElementById('refillAmount').value);
-    if (amount && amount > 0) {
-      document.getElementById('refillMessage').textContent = `✅ DAB rechargé avec ${amount}€`;
-      document.getElementById('refillMessage').classList.add('show');
-    } else {
-      showError('refillMessage', '❌ Montant invalide');
-    }
-  }
+        function hideLoginError() {
+            document.getElementById('loginError').style.display = 'none';
+        }
 
-  // === Limitation des saisies pour carte et PIN ===
-  document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('cardNumber').addEventListener('input', e => {
-      e.target.value = e.target.value.replace(/\D/g, '');
-    });
-    document.getElementById('pin').addEventListener('input', e => {
-      e.target.value = e.target.value.replace(/\D/g, '');
-    });
-  });
+        // Gestion des écrans
+        function showScreen(screenId) {
+            const screens = document.querySelectorAll('.screen');
+            screens.forEach(screen => screen.classList.remove('active'));
+            
+            document.getElementById(screenId).classList.add('active');
+            
+            // Réinitialisation des erreurs et sélections
+            hideAllErrors();
+            clearSelections();
+        }
 
-  // ---------------------------------------
-  // Assistant IA local (rule-based)
-  // ---------------------------------------
-  function toggleAssistant() {
-    const screen = document.getElementById('assistantScreen');
-    if (screen.style.display === 'block') {
-      screen.style.display = 'none';
-    } else {
-      screen.style.display = 'block';
-      // scroll to bottom
-      setTimeout(() => { const box = document.getElementById('assistantMessages'); box.scrollTop = box.scrollHeight; }, 100);
-    }
-  }
+        function hideAllErrors() {
+            const errors = document.querySelectorAll('.alert');
+            errors.forEach(error => error.style.display = 'none');
+        }
 
-  function openAssistant() {
-    document.getElementById('assistantScreen').style.display = 'block';
-    const box = document.getElementById('assistantMessages'); box.scrollTop = box.scrollHeight;
-  }
+        function clearSelections() {
+            // Réinitialiser les montants sélectionnés
+            clearSelectedAmount();
+            selectedDepositType = null;
+            
+            // Réinitialiser les options de dépôt
+            const depositOptions = document.querySelectorAll('#depositScreen .menu-item');
+            depositOptions.forEach(option => {
+                option.style.borderColor = 'var(--border-color)';
+                option.style.background = 'var(--surface)';
+            });
+            
+            // Vider les champs de saisie
+            document.getElementById('customAmount').value = '';
+            document.getElementById('depositAmount').value = '';
+        }
 
-  function appendAssistantMessage(text, from='bot') {
-    const container = document.getElementById('assistantMessages');
-    const div = document.createElement('div');
-    div.className = 'assistant-bubble ' + (from === 'user' ? 'user' : 'bot');
-    div.textContent = text;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
-  }
+        // Gestion des montants de retrait
+        function selectAmount(amount) {
+            selectedAmount = amount;
+            clearSelectedAmount();
+            
+            // Marquer le bouton sélectionné
+            const amountBtns = document.querySelectorAll('.amount-btn');
+            amountBtns.forEach(btn => {
+                if (btn.textContent === `${amount} €`) {
+                    btn.classList.add('selected');
+                }
+            });
+            
+            // Vider le montant personnalisé
+            document.getElementById('customAmount').value = '';
+        }
 
-  function sendAssistantMessage() {
-    const input = document.getElementById('assistantInput');
-    const text = input.value.trim();
-    if (!text) return;
-    appendAssistantMessage(text, 'user');
-    input.value = '';
+        function clearSelectedAmount() {
+            selectedAmount = null;
+            const amountBtns = document.querySelectorAll('.amount-btn');
+            amountBtns.forEach(btn => btn.classList.remove('selected'));
+        }
 
-    // Simuler un temps de réflexion
-    appendAssistantMessage('...', 'bot');
-    setTimeout(() => {
-      // enlever le '...'
-      const msgs = document.querySelectorAll('#assistantMessages .assistant-bubble');
-      const last = msgs[msgs.length-1];
-      if (last && last.textContent === '...') last.remove();
+        function confirmWithdraw() {
+            const customAmount = document.getElementById('customAmount').value;
+            const amount = selectedAmount || parseFloat(customAmount);
+            
+            if (!validateWithdrawAmount(amount)) {
+                return;
+            }
+            
+            pendingOperation = {
+                type: 'withdraw',
+                amount: amount
+            };
+            
+            showConfirmModal(
+                'Confirmer le retrait',
+                `Êtes-vous sûr de vouloir retirer ${amount.toFixed(2)} € ?`,
+                'Retirer'
+            );
+        }
 
-      const response = getResponseFromAI(text);
-      appendAssistantMessage(response, 'bot');
-    }, 500);
-  }
+        function validateWithdrawAmount(amount) {
+            if (!amount || amount <= 0) {
+                showWithdrawError('Veuillez sélectionner ou saisir un montant');
+                return false;
+            }
+            
+            if (amount > currentBalance) {
+                showWithdrawError('Solde insuffisant pour cette opération');
+                return false;
+            }
+            
+            if (amount > 1000) {
+                showWithdrawError('Le montant maximum par retrait est de 1000 €');
+                return false;
+            }
+            
+            if (amount % 10 !== 0) {
+                showWithdrawError('Le montant doit être un multiple de 10 €');
+                return false;
+            }
+            
+            return true;
+        }
 
-  // Fonction simple d'analyse de l'intention (local, rule-based)
-  function getResponseFromAI(message) {
-    const msg = message.toLowerCase();
+        function showWithdrawError(message) {
+            const errorDiv = document.getElementById('withdrawError');
+            const errorMsg = document.getElementById('withdrawErrorMsg');
+            errorMsg.textContent = message;
+            errorDiv.style.display = 'flex';
+        }
 
-    // 1) Vérifier connexion
-    if (!currentUser) {
-      // proposer une aide sur connexion
-      if (msg.includes('solde') || msg.includes('retirer') || msg.includes('déposer') || msg.includes('histor')) {
-        return "🔒 Vous devez être connecté(e) pour que je puisse accéder à votre compte. Connectez-vous d'abord (numéro de carte + PIN).";
-      }
-    }
+        // Gestion des dépôts
+        function selectDepositType(type) {
+            selectedDepositType = type;
+            
+            // Réinitialiser tous les boutons
+            const depositOptions = document.querySelectorAll('#depositScreen .menu-item');
+            depositOptions.forEach(option => {
+                option.style.borderColor = 'var(--border-color)';
+                option.style.background = 'var(--surface)';
+            });
+            
+            // Marquer l'option sélectionnée
+            const selectedOption = document.getElementById(type === 'cash' ? 'cashOption' : 'checkOption');
+            selectedOption.style.borderColor = 'var(--primary-color)';
+            selectedOption.style.background = 'rgba(37, 99, 235, 0.1)';
+        }
 
-    // 2) Intent: demander le solde
-    if (msg.includes('solde') || msg.includes('combien') || msg.includes('balance')) {
-      return `Votre solde actuel est de **${currentUser.balance} €**.`;
-    }
+        function confirmDeposit() {
+            const amount = parseFloat(document.getElementById('depositAmount').value);
+            
+            if (!validateDepositAmount(amount) || !validateDepositType()) {
+                return;
+            }
+            
+            pendingOperation = {
+                type: 'deposit',
+                amount: amount,
+                depositType: selectedDepositType
+            };
+            
+            const typeText = selectedDepositType === 'cash' ? 'en espèces' : 'par chèque';
+            showConfirmModal(
+                'Confirmer le dépôt',
+                `Êtes-vous sûr de vouloir déposer ${amount.toFixed(2)} € ${typeText} ?`,
+                'Déposer'
+            );
+        }
 
-    // 3) Intent: historique
-    if (msg.includes('histor') || msg.includes('opération') || msg.includes('transactions')) {
-      if (operationHistory.length === 0) return 'Vous n\'avez pas d\'opérations récentes.';
-      // demander un nombre si précisé
-      const matchN = msg.match(/(\d+)\s*(derni|dern|last)?/);
-      let n = matchN ? Math.min(parseInt(matchN[1],10), 10) : 5;
-      const ops = operationHistory.slice(0, n);
-      return ops.map(o => `${o.type} — ${o.amount}€ le ${o.date} à ${o.time}`).join('\n');
-    }
+        function validateDepositAmount(amount) {
+            if (!amount || amount <= 0) {
+                showDepositError('Veuillez saisir un montant valide');
+                return false;
+            }
+            
+            if (amount > 10000) {
+                showDepositError('Le montant maximum par dépôt est de 10 000 €');
+                return false;
+            }
+            
+            return true;
+        }
 
-    // 4) Intent: retirer X
-    const retirerMatch = msg.match(/retir(?:er|e)?\s*(?:de|)?\s*(\d+)\s*€?/);
-    if (retirerMatch) {
-      const amount = parseInt(retirerMatch[1], 10);
-      // essayer de retirer via la fonction existante
-      if (!currentUser) return '🔒 Connectez-vous d\'abord.';
-      if (isNaN(amount)) return 'Je n\'ai pas compris le montant à retirer.';
-      // placer le montant puis appeler withdraw(); reuse validation inside
-      document.getElementById('withdrawAmount').value = amount;
-      // call withdraw and capture potential error by reading withdrawError/Success after a tiny delay
-      withdraw();
-      // determine result message
-      const withdrawErr = document.getElementById('withdrawError').textContent;
-      const withdrawSucc = document.getElementById('withdrawSuccess').textContent;
-      if (withdrawSucc) return `✅ ${withdrawSucc}`;
-      if (withdrawErr) return `❌ ${withdrawErr}`;
-      return 'Opération de retrait lancée.';
-    }
+        function validateDepositType() {
+            if (!selectedDepositType) {
+                showDepositError('Veuillez sélectionner le type de dépôt');
+                return false;
+            }
+            return true;
+        }
 
-    // 5) Intent: déposer X
-    const depotMatch = msg.match(/d(é|e)p(?:os|o)?e?r?\s*(?:de|)?\s*(\d+)\s*€?/);
-    if (depotMatch) {
-      const amount = parseInt(depotMatch[1], 10);
-      if (!currentUser) return '🔒 Connectez-vous d\'abord.';
-      if (isNaN(amount)) return 'Je n\'ai pas compris le montant à déposer.';
-      document.getElementById('depositAmount').value = amount;
-      deposit();
-      const depErr = document.getElementById('depositError').textContent;
-      const depSucc = document.getElementById('depositSuccess').textContent;
-      if (depSucc) return `✅ ${depSucc}`;
-      if (depErr) return `❌ ${depErr}`;
-      return 'Opération de dépôt lancée.';
-    }
+        function showDepositError(message) {
+            const errorDiv = document.getElementById('depositError');
+            const errorMsg = document.getElementById('depositErrorMsg');
+            errorMsg.textContent = message;
+            errorDiv.style.display = 'flex';
+        }
 
-    // 6) Intent: aide générale
-    if (msg.includes('aide') || msg.includes('help') || msg.includes('comment') || msg.includes('quoi')) {
-      return "Je peux :\n- vous dire votre solde (ex: \"solde\")\n- retirer un montant (ex: \"retirer 50\")\n- déposer un montant (ex: \"déposer 100\")\n- afficher les opérations récentes (ex: \"historique 3\")\nNB : connexion requise pour actions sur le compte.";
-    }
+        // Gestion des modals
+        function showConfirmModal(title, message, confirmText) {
+            document.getElementById('confirmTitle').textContent = title;
+            document.getElementById('confirmMessage').textContent = message;
+            document.getElementById('confirmBtn').textContent = confirmText;
+            document.getElementById('confirmModal').classList.add('show');
+        }
 
-    // 7) Fallback
-    return "Désolé, je n\'ai pas compris. Essayez : 'solde', 'retirer 50', 'déposer 100', 'historique 3'.";
-  }
+        function closeModal() {
+            document.getElementById('confirmModal').classList.remove('show');
+            pendingOperation = null;
+        }
 
-</script>
+        function executeOperation() {
+            if (!pendingOperation) return;
+            
+            closeModal();
+            showLoading();
+            
+            // Simulation d'une transaction
+            setTimeout(() => {
+                hideLoading();
+                
+                if (pendingOperation.type === 'withdraw') {
+                    currentBalance -= pendingOperation.amount;
+                    updateBalance();
+                    showToast(`Retrait de ${pendingOperation.amount.toFixed(2)} € effectué avec succès`, 'success');
+                    showScreen('mainMenuScreen');
+                } else if (pendingOperation.type === 'deposit') {
+                    currentBalance += pendingOperation.amount;
+                    updateBalance();
+                    const typeText = pendingOperation.depositType === 'cash' ? 'en espèces' : 'par chèque';
+                    showToast(`Dépôt de ${pendingOperation.amount.toFixed(2)} € ${typeText} effectué avec succès`, 'success');
+                    showScreen('mainMenuScreen');
+                }
+                
+                pendingOperation = null;
+            }, 2500);
+        }
+
+        // Gestion de la carte avalée
+        function contactOperator() {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                showToast('Un opérateur a été contacté. Veuillez patienter.', 'success');
+            }, 2000);
+        }
+
+        // Utilitaires UI
+        function updateUserName(name) {
+            document.getElementById('userName').textContent = name;
+        }
+
+        function updateBalance() {
+            const balanceElement = document.getElementById('balanceAmount');
+            balanceElement.textContent = currentBalance.toLocaleString('fr-FR', {
+                style: 'currency',
+                currency: 'EUR'
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loading').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').classList.remove('show');
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toastMessage');
+            
+            toastMessage.textContent = message;
+            toast.className = `toast ${type}`;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 4000);
+        }
+
+        function logout() {
+            showLoading();
+            
+            setTimeout(() => {
+                hideLoading();
+                currentUser = null;
+                selectedAmount = null;
+                selectedDepositType = null;
+                pendingOperation = null;
+                
+                // Réinitialiser le formulaire de connexion
+                document.getElementById('loginForm').reset();
+                hideLoginError();
+                
+                showScreen('loginScreen');
+                showToast('Déconnexion réussie', 'success');
+            }, 1500);
+        }
+
+        // Gestion des événements clavier pour l'accessibilité
+        document.addEventListener('keydown', function(e) {
+            // Fermer modal avec Échap
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+            
+            // Navigation rapide avec les touches numériques dans le menu
+            if (document.getElementById('mainMenuScreen').classList.contains('active')) {
+                switch(e.key) {
+                    case '1':
+                        showScreen('balanceScreen');
+                        break;
+                    case '2':
+                        showScreen('withdrawScreen');
+                        break;
+                    case '3':
+                        showScreen('depositScreen');
+                        break;
+                    case '0':
+                        logout();
+                        break;
+                }
+            }
+        });
+
+        // Gestion des clics sur les modals (fermer en cliquant à l'extérieur)
+        document.getElementById('confirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Animation des boutons au focus (accessibilité)
+        document.addEventListener('focusin', function(e) {
+            if (e.target.classList.contains('btn') || e.target.classList.contains('menu-item')) {
+                e.target.style.transform = 'translateY(-2px)';
+                e.target.style.boxShadow = 'var(--shadow-lg)';
+            }
+        });
+
+        document.addEventListener('focusout', function(e) {
+            if (e.target.classList.contains('btn') || e.target.classList.contains('menu-item')) {
+                e.target.style.transform = '';
+                e.target.style.boxShadow = '';
+            }
+        });
+
+        // Simulation d'inactivité (déconnexion automatique)
+        let inactivityTimer;
+        const INACTIVITY_TIMEOUT = 300000; // 5 minutes
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            
+            if (currentUser) {
+                inactivityTimer = setTimeout(() => {
+                    showToast('Session expirée pour des raisons de sécurité', 'warning');
+                    setTimeout(logout, 2000);
+                }, INACTIVITY_TIMEOUT);
+            }
+        }
+
+        // Démarrer le timer d'inactivité sur les interactions utilisateur
+        ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer, true);
+        });
+    </script>
 </body>
 </html>
